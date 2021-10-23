@@ -43,7 +43,9 @@
 	var DateArray = (function(){
 		var extras = {
 			get: function(i){
-				return this.slice(i)[0];
+				if (typeof this.slice !== "undefined")
+					return this.slice(i)[0];
+					
 			},
 			contains: function(d){
 				// Array.indexOf is not cross-browser;
@@ -214,7 +216,7 @@
 				if (!dates[lang])
 					lang = defaults.language;
 			}
-			o.language = lang;
+			o.language = 'fa';
 
 			// Retrieve view index from any aliases
 			o.startView = this._resolveViewName(o.startView);
@@ -807,6 +809,8 @@
 				this._trigger('clearDate');
 				this.element.change();
 			}
+			var formatted = this.getFormattedDate();
+			this.inputField.val(formatted);
 
 			this.fill();
 			return this;
@@ -835,7 +839,7 @@
 			var html = '';
 			var focused;
 			for (var i = 0; i < 12; i++){
-				focused = localDate && localDate.getMonth() === i ? ' focused' : '';
+				focused = localDate && new persianDate(localDate).month() === (i+1) ? ' focused' : '';
 				html += '<span class="month' + focused + '">' + dates[this.o.language].monthsShort[i] + '</span>';
 			}
 			this.picker.find('.datepicker-months td').html(html);
@@ -853,12 +857,12 @@
 
 		getClassNames: function(date){
 			var cls = [],
-				year = this.viewDate.getUTCFullYear(),
-				month = this.viewDate.getUTCMonth(),
+				year = new persianDate(this.viewDate).year(),
+				month = new persianDate(this.viewDate).month(),
 				today = UTCToday();
-			if (date.getUTCFullYear() < year || (date.getUTCFullYear() === year && date.getUTCMonth() < month)){
+			if (new persianDate(date).year() < year || (new persianDate(date).year() === year && new persianDate(date).month() < month)){
 				cls.push('old');
-			} else if (date.getUTCFullYear() > year || (date.getUTCFullYear() === year && date.getUTCMonth() > month)){
+			} else if (new persianDate(date).year() > year || (new persianDate(date).year() === year && new persianDate(date).month() > month)){
 				cls.push('new');
 			}
 			if (this.focusDate && date.valueOf() === this.focusDate.valueOf())
@@ -902,7 +906,7 @@
 			var view = this.picker.find(selector);
 			var startVal = Math.floor(year / factor) * factor;
 			var endVal = startVal + step * 9;
-			var focusedVal = Math.floor(this.viewDate.getFullYear() / step) * step;
+			var focusedVal = Math.floor(new persianDate(this.viewDate).year() / step) * step;
 			var selected = $.map(this.dates, function(d){
 				return Math.floor(d.getUTCFullYear() / step) * step;
 			});
@@ -950,18 +954,21 @@
 				html += '<span class="' + classes.join(' ') + '"' + (tooltip ? ' title="' + tooltip + '"' : '') + '>' + currVal + '</span>';
 			}
 
+			startVal = this.o.language == 'fa' ? DPGlobal.en2fa(startVal) : startVal;
+			endVal = this.o.language == 'fa' ? DPGlobal.en2fa(endVal) : endVal;
+
 			view.find('.datepicker-switch').text(startVal + '-' + endVal);
 			view.find('td').html(html);
 		},
 
 		fill: function(){
 			var d = new Date(this.viewDate),
-				year = d.getUTCFullYear(),
-				month = d.getUTCMonth(),
-				startYear = this.o.startDate !== -Infinity ? this.o.startDate.getUTCFullYear() : -Infinity,
-				startMonth = this.o.startDate !== -Infinity ? this.o.startDate.getUTCMonth() : -Infinity,
-				endYear = this.o.endDate !== Infinity ? this.o.endDate.getUTCFullYear() : Infinity,
-				endMonth = this.o.endDate !== Infinity ? this.o.endDate.getUTCMonth() : Infinity,
+				year = new persianDate(d).year(),
+				month = new persianDate(d).month(),
+				startYear = this.o.startDate !== -Infinity ? new persianDate(this.o.startDate).year() : -Infinity,
+				startMonth = this.o.startDate !== -Infinity ? new persianDate(this.o.startDate).month() : -Infinity,
+				endYear = this.o.endDate !== Infinity ? new persianDate(this.o.endDate).year() : Infinity,
+				endMonth = this.o.endDate !== Infinity ? new persianDate(this.o.endDate).month() : Infinity,
 				todaytxt = dates[this.o.language].today || dates['en'].today || '',
 				cleartxt = dates[this.o.language].clear || dates['en'].clear || '',
         titleFormat = dates[this.o.language].titleFormat || dates['en'].titleFormat,
@@ -984,7 +991,7 @@
 						.css('display', typeof this.o.title === 'string' && this.o.title !== '' ? 'table-cell' : 'none');
 			this.updateNavArrows();
 			this.fillMonths();
-			var prevMonth = UTCDate(year, month, 0),
+			var prevMonth = UTCDate(new persianDate(d).date(0).toDate().getUTCFullYear(), new persianDate(d).date(0).toDate().getUTCMonth(), new persianDate(d).date(0).toDate().getUTCDate()),
 				day = prevMonth.getUTCDate();
 			prevMonth.setUTCDate(day - (prevMonth.getUTCDay() - this.o.weekStart + 7)%7);
 			var nextMonth = new Date(prevMonth);
@@ -1017,7 +1024,8 @@
 				clsName = this.getClassNames(prevMonth);
 				clsName.push('day');
 
-				var content = prevMonth.getUTCDate();
+				var content = new persianDate(prevMonth).date();
+				content = this.o.language == 'fa' ? DPGlobal.en2fa(content) : content;
 
 				if (this.o.beforeShowDay !== $.noop){
 					before = this.o.beforeShowDay(this._utc_to_local(prevMonth));
@@ -1036,7 +1044,6 @@
 					if (before.content)
 						content = before.content;
 				}
-
 				//Check if uniqueSort exists (supported by jquery >=1.12 and >=2.2)
 				//Fallback to unique function for older jquery versions
 				if ($.isFunction($.uniqueSort)) {
@@ -1057,13 +1064,13 @@
 			var monthsTitle = dates[this.o.language].monthsTitle || dates['en'].monthsTitle || 'Months';
 			var months = this.picker.find('.datepicker-months')
 						.find('.datepicker-switch')
-							.text(this.o.maxViewMode < 2 ? monthsTitle : year)
+							.text(this.o.maxViewMode < 2 ? monthsTitle : DPGlobal.en2fa(year))
 							.end()
 						.find('tbody span').removeClass('active');
 
 			$.each(this.dates, function(i, d){
-				if (d.getUTCFullYear() === year)
-					months.eq(d.getUTCMonth()).addClass('active');
+				if (new persianDate(d).year() === year)
+					months.eq(new persianDate(d).month() - 1).addClass('active');
 			});
 
 			if (year < startYear || year > endYear){
@@ -1134,13 +1141,13 @@
 			if (!this._allow_update)
 				return;
 
-			var d = new Date(this.viewDate),
-				year = d.getUTCFullYear(),
-				month = d.getUTCMonth(),
-				startYear = this.o.startDate !== -Infinity ? this.o.startDate.getUTCFullYear() : -Infinity,
-				startMonth = this.o.startDate !== -Infinity ? this.o.startDate.getUTCMonth() : -Infinity,
-				endYear = this.o.endDate !== Infinity ? this.o.endDate.getUTCFullYear() : Infinity,
-				endMonth = this.o.endDate !== Infinity ? this.o.endDate.getUTCMonth() : Infinity,
+			var d = new persianDate(this.viewDate),
+				year = d.year(),
+				month = d.month(),
+				startYear = this.o.startDate !== -Infinity ? new persianDate(this.o.startDate).year() : -Infinity,
+				startMonth = this.o.startDate !== -Infinity ? new persianDate(this.o.startDate).month() : -Infinity,
+				endYear = this.o.endDate !== Infinity ? new persianDate(this.o.endDate).month() : Infinity,
+				endMonth = this.o.endDate !== Infinity ? new persianDate(this.o.endDate).month() : Infinity,
 				prevIsDisabled,
 				nextIsDisabled,
 				factor = 1;
@@ -1192,28 +1199,44 @@
 			}
 
 			if (!target.hasClass('disabled')){
+				var p = new persianDate(this.viewDate)
 				// Clicked on a month, year, decade, century
 				if (target.hasClass('month')
 						|| target.hasClass('year')
 						|| target.hasClass('decade')
 						|| target.hasClass('century')) {
-					this.viewDate.setUTCDate(1);
-
+					
+					
+					p.date(1)
+					this.viewDate.setUTCFullYear(p.toDate().getYear())
+					this.viewDate.setUTCMonth(p.toDate().getMonth())
+					this.viewDate.setUTCDate(p.toDate().getDate())
+					
 					day = 1;
 					if (this.viewMode === 1){
 						month = target.parent().find('span').index(target);
-						year = this.viewDate.getUTCFullYear();
-						this.viewDate.setUTCMonth(month);
+						p.month(month+1);
+						year = p.year();
+						this.viewDate.setUTCFullYear(p.toDate().getFullYear())
+						this.viewDate.setUTCMonth(p.toDate().getMonth())
+						this.viewDate.setUTCDate(p.toDate().getDate())
 					} else {
 						month = 0;
 						year = Number(target.text());
-						this.viewDate.setUTCFullYear(year);
+						p.year(year);
+						p.month(1);
+						this.viewDate.setUTCFullYear(p.toDate().getFullYear())
+						this.viewDate.setUTCMonth(p.toDate().getMonth())
+						this.viewDate.setUTCDate(p.toDate().getDate())
 					}
 
 					this._trigger(DPGlobal.viewModes[this.viewMode - 1].e, this.viewDate);
 
 					if (this.viewMode === this.o.minViewMode){
-						this._setDate(UTCDate(year, month, day));
+						p.year(year);
+						p.month(month+1);
+						p.date(day)
+						this._setDate(p.toDate());
 					} else {
 						this.setViewMode(this.viewMode - 1);
 						this.fill();
@@ -1689,22 +1712,22 @@
 		datesDisabled: [],
 		endDate: Infinity,
 		forceParse: true,
-		format: 'mm/dd/yyyy',
+		format: 'dd-mm-yyyy',
 		keepEmptyValues: false,
 		keyboardNavigation: true,
-		language: 'en',
+		language: 'fa',
 		minViewMode: 0,
 		maxViewMode: 4,
 		multidate: false,
 		multidateSeparator: ',',
 		orientation: "auto",
-		rtl: false,
+		rtl: true,
 		startDate: -Infinity,
 		startView: 0,
 		todayBtn: false,
 		todayHighlight: false,
 		updateViewDate: true,
-		weekStart: 0,
+		weekStart: 6,
 		disableTouchKeyboard: false,
 		enableOnReadonly: true,
 		showOnFocus: true,
@@ -1734,7 +1757,18 @@
 			today: "Today",
 			clear: "Clear",
 			titleFormat: "MM yyyy"
-		}
+		},
+		fa: {
+			days: ['یکشنبه', 'دوشنبه', 'سه شنبه', 'چهار شنبه', 'پنجشنبه', 'جمعه', 'شنبه'],
+			daysShort: ['ی', 'د', 'س', 'چ', 'پ', 'ج','ش'],
+			daysMin: ['ی', 'د', 'س', 'چ', 'پ', 'ج','ش'],
+			months: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
+			monthsShort: ['فرو', 'ارد', 'خرد', 'تیر', 'مرد', 'شهر', 'مهر', 'آبا', 'آذر', 'دی', 'بهم', 'اسف'],
+			today: "امروز",
+			clear: "پاک کردن",
+			titleFormat: "MM yyyy",
+			monthsTitle: "ماه ها",
+		},
 	};
 
 	var DPGlobal = {
@@ -1769,6 +1803,25 @@
 				navStep: 1000
 			}
 		],
+		fa2en: function(str){
+			persianNumbers = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+			arabicNumbers  = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
+			if(typeof str === 'string')
+			{
+				for(var i=0; i<10; i++)
+				{
+				str = str.replace(persianNumbers[i], i).replace(arabicNumbers[i], i);
+				}
+			}
+			return str;
+		},
+		en2fa: function(n){
+			const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+			return n
+				.toString()
+				.replace(/\d/g, x => farsiDigits[x]);
+		},
 		validParts: /dd?|DD?|mm?|MM?|yy(?:yy)?/g,
 		nonpunctuation: /[^ -\/:-@\u5e74\u6708\u65e5\[-`{-~\t\n\r]+/g,
 		parseFormat: function(format){
@@ -1783,11 +1836,16 @@
 			}
 			return {separators: separators, parts: parts};
 		},
-		parseDate: function(date, format, language, assumeNearby){
+		parseDate: function(date, format, language, assumeNearby, shamsi=false){
+			var olddate = date,
+				oldformat = format,
+				oldlanguage = language,
+				oldassumeNearby = assumeNearby;
 			if (!date)
 				return undefined;
 			if (date instanceof Date)
 				return date;
+			date = DPGlobal.fa2en(date)
 			if (typeof format === 'string')
 				format = DPGlobal.parseFormat(format);
 			if (format.toValue)
@@ -1862,7 +1920,41 @@
 			setters_map['yy'] = setters_map['yyyy'];
 			setters_map['M'] = setters_map['MM'] = setters_map['mm'] = setters_map['m'];
 			setters_map['dd'] = setters_map['d'];
-			date = UTCToday();
+
+			function applyNearbyYearShamsi(year, threshold){
+				if (threshold === true)
+					threshold = 20;
+
+				// if year is 2 digits or less, than the user most likely is trying to get a recent century
+				if (year < 100){
+					year += 1400;
+					// if the new year is more than threshold years in advance, use last century
+					if (year > (new persianDate().year()+threshold)){
+						year -= 100;
+					}
+				}
+
+				return year;
+			}
+
+			var	setters_map_shamsi = {
+					yyyy: function(d,v){
+						return d.year(assumeNearby ? applyNearbyYearShamsi(v, assumeNearby) : v);
+					},
+					m: function(d,v){
+						if (isNaN(d))
+							return d;
+						d.month(v);
+						return d;
+					},
+					d: function(d,v){
+						return d.date(v);
+					}
+				};
+			setters_map_shamsi['yy'] = setters_map_shamsi['yyyy'];
+			setters_map_shamsi['M'] = setters_map_shamsi['MM'] = setters_map_shamsi['mm'] = setters_map_shamsi['m'];
+			setters_map_shamsi['dd'] = setters_map_shamsi['d'];
+
 			var fparts = format.parts.slice();
 			// Remove noop parts
 			if (parts.length !== fparts.length){
@@ -1896,34 +1988,44 @@
 					parsed[part] = val;
 				}
 				var _date, s;
+				if (shamsi) {
+					console.log(fparts)
+					console.log(parts)
+				}
 				for (i=0; i < setters_order.length; i++){
 					s = setters_order[i];
 					if (s in parsed && !isNaN(parsed[s])){
-						_date = new Date(date);
-						setters_map[s](_date, parsed[s]);
+						_date = shamsi ? new persianDate(new Date(date)) : new Date(date);
+						temp = shamsi ? setters_map_shamsi[s](_date, parsed[s]) : setters_map[s](_date, parsed[s]);
 						if (!isNaN(_date))
-							date = _date;
+							date = shamsi ? _date.toDate() : _date;
+					}
+				}
+				if (!shamsi) {
+					if (date.getUTCFullYear() < 1500) {
+						date = DPGlobal.parseDate(olddate, oldformat, oldlanguage, true, true);
 					}
 				}
 			}
 			return date;
 		},
 		formatDate: function(date, format, language){
+			date = new persianDate(date)
 			if (!date)
 				return '';
 			if (typeof format === 'string')
 				format = DPGlobal.parseFormat(format);
 			if (format.toDisplay)
-                return format.toDisplay(date, format, language);
+                return DPGlobal.en2fa(format.toDisplay(date, format, language));
             var val = {
-				d: date.getUTCDate(),
-				D: dates[language].daysShort[date.getUTCDay()],
-				DD: dates[language].days[date.getUTCDay()],
-				m: date.getUTCMonth() + 1,
-				M: dates[language].monthsShort[date.getUTCMonth()],
-				MM: dates[language].months[date.getUTCMonth()],
-				yy: date.getUTCFullYear().toString().substring(2),
-				yyyy: date.getUTCFullYear()
+				d: date.date(),
+				D: dates[language].daysShort[date.day()-1],
+				DD: dates[language].days[date.day()-1],
+				m: date.month(),
+				M: dates[language].monthsShort[date.month()-1],
+				MM: dates[language].months[date.month()-1],
+				yy: date.year().toString().substring(2),
+				yyyy: date.year()
 			};
 			val.dd = (val.d < 10 ? '0' : '') + val.d;
 			val.mm = (val.m < 10 ? '0' : '') + val.m;
@@ -1934,7 +2036,7 @@
 					date.push(seps.shift());
 				date.push(val[format.parts[i]]);
 			}
-			return date.join('');
+			return DPGlobal.en2fa(date.join(''));
 		},
 		headTemplate: '<thead>'+
 			              '<tr>'+
