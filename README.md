@@ -34,6 +34,10 @@ And call this code and do the magic
 </script>
 ```
 
+# Special Features
+
+Defualt date can be Any Format in Any Locale and Calendar.
+
 # Required Libraries
 
 ## JQuery
@@ -42,6 +46,5 @@ And call this code and do the magic
 # Thanks to
 
 Persian date (great persian date library for js).
-[Persian Date](http://babakhani.github.io/PersianWebToolkit/docs/persian-date/) 
+[Persian Date](https://github.com/babakhani/PersianDate) 
 
-# Thanks
