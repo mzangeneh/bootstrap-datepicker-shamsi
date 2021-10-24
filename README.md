@@ -34,6 +34,9 @@ And call this code and do the magic
 </script>
 ```
 
+# Demo with full instruction
+[DEMO](https://mzangeneh.github.io/bootstrap-datepicker-shamsi)
+
 # Special Features
 
 Defualt date can be Any Format in Any Locale and Calendar.
